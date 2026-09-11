@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>銀髮族防詐騙闖關遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 flex items-center justify-center h-screen">
+
+    <div id="app" class="w-full max-w-md bg-white p-8 rounded-xl shadow-md">
+        <!-- 1. 登入畫面 -->
+        <div id="login-section">
+            <h1 class="text-2xl font-bold text-center mb-6 text-slate-700">防詐騙闖關挑戰</h1>
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600">您的姓名 / 稱呼</label>
+                    <input type="text" id="name" required class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600">聯絡電話或信箱</label>
+                    <input type="text" id="contact" required class="w-full mt-1 p-2 border rounded-md">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700">開始闖關</button>
+            </form>
+        </div>
+
+        <!-- 2. 遊戲闖關畫面 (預設隱藏) -->
+        <div id="game-section" class="hidden">
+            <h2 id="story-title" class="text-xl font-bold mb-4 text-slate-800">情境載入中...</h2>
+            <p id="story-content" class="text-slate-600 mb-6 bg-slate-100 p-4 rounded-lg"></p>
+            <div class="space-y-3">
+                <button onclick="checkAnswer(true)" class="w-full bg-red-500 text-white p-3 rounded-md hover:bg-red-600 font-bold">🚨 這是詐騙！</button>
+                <button onclick="checkAnswer(false)" class="w-full bg-green-500 text-white p-3 rounded-md hover:bg-green-600 font-bold">✅ 這是安全的</button>
+            </div>
+        </div>
+
+        <!-- 3. 結果解析畫面 (預設隱藏) -->
+        <div id="result-section" class="hidden">
+            <h2 id="result-title" class="text-2xl font-bold mb-2"></h2>
+            <p id="result-reason" class="text-slate-600 mb-6 bg-yellow-50 p-4 rounded-lg border border-yellow-200"></p>
+            <button onclick="nextStory()" class="w-full bg-blue-600 text-white p-2 rounded-md">下一關</button>
+        </div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbyVoKeDeIxm3K_Wb9deZx98viAR16F8X15UBed-IpxNHAvJAaITRIg57TfiwNywbowZ/exec"; // 填入剛剛部署的網址
+        let currentUser = {};
+        let stories = [];
+        let currentIndex = 0;
+        let score = 0;
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const contact = document.getElementById('contact').value;
+
+            // 傳送登入資料到 Google 試算表
+            let response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'login', name, contact })
+            });
+            let result = await response.json();
+
+            if (result.status === 'success') {
+                currentUser = { name, contact, userId: result.userId };
+                // 切換到遊戲畫面並載入題目
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('game-section').classList.remove('hidden');
+                loadStories();
+            }
+        }
+
+        async function loadStories() {
+            let response = await fetch(GAS_URL);
+            let result = await response.json();
+            if (result.status === 'success') {
+                stories = result.stories;
+                showStory();
+            }
+        }
+
+        function showStory() {
+            if (currentIndex < stories.length) {
+                let current = stories[currentIndex];
+                document.getElementById('story-title').innerText = `第 ${currentIndex + 1} 關：情境判別`;
+                document.getElementById('story-content').innerText = current.Content;
+            } else {
+                alert(`闖關結束！你完成了所有挑戰！`);
+                location.reload();
+            }
+        }
+
+        function checkAnswer(userChoice) {
+            let current = stories[currentIndex];
+            // 轉成布林值比對
+            let isScam = current.IsScam.toString().toLowerCase() === 'true';
+            
+            document.getElementById('game-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+
+            if (userChoice === isScam) {
+                document.getElementById('result-title').innerText = "🎉 答對了！";
+                document.getElementById('result-title').className = "text-2xl font-bold mb-2 text-green-600";
+            } else {
+                document.getElementById('result-title').innerText = "❌ 答錯囉！";
+                document.getElementById('result-title').className = "text-2xl font-bold mb-2 text-red-600";
+            }
+            document.getElementById('result-reason').innerText = `解析：${current.Reason}`;
+            currentIndex++;
+        }
+
+        function nextStory() {
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('game-section').classList.remove('hidden');
+            showStory();
+        }
+    </script>
+</body>
+</html>
