@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>銀髮族防詐騙 AI 互動樂園</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+
+    <div id="app" class="w-full max-w-xl bg-white p-6 rounded-2xl shadow-lg">
+        
+        <!-- 1. 登入畫面 -->
+        <div id="login-section">
+            <h1 class="text-2xl font-bold text-center mb-2 text-slate-800"> 防詐騙 AI 智慧樂園</h1>
+            <p class="text-xs text-center text-slate-500 mb-4">輸入姓名與聯絡方式，自動接續您的防詐金幣與通關紀錄</p>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-600">您的姓名 / 稱呼</label>
+                    <input type="text" id="name" required class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-600">聯絡電話或信箱</label>
+                    <input type="text" id="contact" required class="w-full mt-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button type="submit" id="login-btn" class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 font-bold">進入樂園</button>
+            </form>
+        </div>
+
+        <!-- 2. 主選單畫面 -->
+        <div id="menu-section" class="hidden">
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 rounded-xl mb-6 shadow-md flex justify-between items-center">
+                <div>
+                    <h3 id="welcome-user" class="text-lg font-bold">玩家：安安</h3>
+                    <p class="text-xs text-blue-100">逆向說服 AI 挑戰賽進行中</p>
+                </div>
+                <div class="bg-white/20 px-4 py-2 rounded-lg text-center backdrop-blur-sm">
+                    <span class="block text-xs text-blue-100">防詐金幣</span>
+                    <span id="player-coins" class="text-xl font-extrabold text-yellow-300"> 100</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <button onclick="goToCategorySelect()" class="w-full bg-emerald-600 text-white p-4 rounded-xl hover:bg-emerald-700 font-bold flex items-center justify-center space-x-2 shadow">
+                    <span> 選擇詐騙類型闖關挑戰</span>
+                </button>
+                <button onclick="goToAIChat()" class="w-full bg-purple-600 text-white p-4 rounded-xl hover:bg-purple-700 font-bold flex items-center justify-center space-x-2 shadow">
+                    <span> AI 防詐諮詢顧問</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. 詐騙類型選擇選單 -->
+        <div id="category-section" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="backToMenu()" class="text-sm text-blue-600 hover:underline">⬅️ 返回主選單</button>
+                <h2 class="font-bold text-slate-800">選擇詐騙類型</h2>
+            </div>
+            <div id="category-list" class="space-y-3">
+                <!-- 動態生成分類按鈕 -->
+            </div>
+        </div>
+
+        <!-- 4. 關卡列表頁 -->
+        <div id="levels-section" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="goToCategorySelect()" class="text-sm text-blue-600 hover:underline">⬅️ 返回類型選擇</button>
+                <h2 id="current-category-title" class="font-bold text-emerald-700">關卡列表</h2>
+            </div>
+            <div id="levels-list" class="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+                <!-- 動態生成關卡 -->
+            </div>
+        </div>
+
+        <!-- 5. 遊戲對話挑戰頁 -->
+        <div id="game-section" class="hidden">
+            <div class="flex justify-between items-center mb-3">
+                <button onclick="exitLevel()" class="text-sm text-red-600 font-bold hover:underline"> 退出關卡 (保留情境)</button>
+                <span id="level-status-tag" class="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">對話中：試著說服 AI 承認詐騙</span>
+            </div>
+            
+            <div class="bg-red-50 p-3 rounded-lg border border-red-100 mb-3">
+                <h4 class="text-xs font-bold text-red-700"> 當前情境提示：</h4>
+                <p id="game-story-desc" class="text-xs text-slate-700 mt-1"></p>
+            </div>
+
+            <!-- 對話框 -->
+            <div id="chat-container" class="h-60 overflow-y-auto bg-slate-50 p-4 rounded-xl border mb-3 space-y-3 text-sm">
+                <!-- 動態訊息 -->
+            </div>
+
+            <div id="input-area" class="flex space-x-2">
+                <input type="text" id="user-chat-input" placeholder="對 AI 說點什麼來戳破他..." class="flex-1 p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">
+                <button id="send-chat-btn" onclick="sendUserMessage()" class="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 font-bold text-sm">發送</button>
+            </div>
+            <div id="success-banner" class="hidden text-center mt-3">
+                <p class="text-green-600 font-bold mb-2"> 恭喜！您成功逼迫 AI 承認這是詐騙！獲得 +100 金幣獎勵！</p>
+                <button onclick="goToCategorySelect()" class="bg-emerald-600 text-white w-full py-3 rounded-lg font-bold">返回關卡選擇</button>
+            </div>
+        </div>
+
+        <!-- 6. AI 諮詢顧問頁 -->
+        <div id="ai-chat-section" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="backToMenu()" class="text-sm text-blue-600 hover:underline">⬅️ 返回主選單</button>
+                <h3 class="font-bold text-purple-700"> AI 防詐顧問</h3>
+            </div>
+            <div id="consult-container" class="h-64 overflow-y-auto bg-slate-50 p-4 rounded-xl border mb-3 space-y-3 text-sm">
+                <div class="bg-purple-100 text-purple-900 p-3 rounded-lg">您好！我是防詐顧問，有任何可疑訊息都可以問我！</div>
+            </div>
+            <div class="flex space-x-2">
+                <input type="text" id="consult-input" placeholder="輸入您的疑問..." class="flex-1 p-3 border rounded-lg text-sm">
+                <button onclick="sendConsultMessage()" class="bg-purple-600 text-white px-4 py-3 rounded-lg font-bold text-sm">發送</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbx-nzMvBGDYy3fu2wmtQehdzVL_9NS457WmoZs0HBTSWWh2FaiNCzF-qe2m1FRhrus/exec"; // 記得填入你的 GAS 網址
+        let currentUser = {};
+        let categoriesData = {};
+        let currentCategoryName = "";
+        let activeStory = null;
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const contact = document.getElementById('contact').value;
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true;
+            btn.innerText = "登入中...";
+
+            try {
+                let res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'login', name, contact }) });
+                let result = await res.json();
+                if (result.status === 'success') {
+                    currentUser.userId = result.userId;
+                    currentUser.coins = result.coins;
+                    document.getElementById('welcome-user').innerText = `玩家：${name}`;
+                    document.getElementById('player-coins').innerText = ` ${currentUser.coins}`;
+                    
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('menu-section').classList.remove('hidden');
+                }
+            } catch (err) {
+                alert("登入失敗，請檢查網路");
+                btn.disabled = false;
+                btn.innerText = "進入樂園";
+            }
+        }
+
+        function backToMenu() {
+            hideAll();
+            document.getElementById('menu-section').classList.remove('hidden');
+        }
+
+        async function goToCategorySelect() {
+            hideAll();
+            document.getElementById('category-section').classList.remove('hidden');
+            
+            let listEl = document.getElementById('category-list');
+            listEl.innerHTML = `<p class="text-center text-slate-500 py-4">正在載入詐騙類型...</p>`;
+
+            try {
+                let res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'get_categories_and_stories', userId: currentUser.userId }) });
+                let result = await res.json();
+                if (result.status === 'success') {
+                    categoriesData = result.categories;
+                    listEl.innerHTML = "";
+                    for (let cat in categoriesData) {
+                        let count = categoriesData[cat].length;
+                        let completedCount = categoriesData[cat].filter(s => s.isCompleted).length;
+                        listEl.innerHTML += `
+                            <button onclick="selectCategory('${cat}')" class="w-full bg-white border p-4 rounded-xl shadow-sm hover:border-blue-500 flex justify-between items-center text-left">
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-lg"> ${cat}</h3>
+                                    <p class="text-xs text-slate-500">包含 ${count} 個關卡情境</p>
+                                </div>
+                                <span class="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">已通關: ${completedCount}/${count}</span>
+                            </button>
+                        `;
+                    }
+                }
+            } catch (err) {
+                listEl.innerHTML = `<p class="text-center text-red-500">載入失敗，請重新整理</p>`;
+            }
+        }
+
+        function selectCategory(catName) {
+            currentCategoryName = catName;
+            hideAll();
+            document.getElementById('levels-section').classList.remove('hidden');
+            document.getElementById('current-category-title').innerText = ` ${catName} 關卡列表`;
+
+            let levelsListEl = document.getElementById('levels-list');
+            levelsListEl.innerHTML = "";
+
+            let stories = categoriesData[catName];
+            stories.forEach((story, idx) => {
+                let badge = story.isCompleted 
+                    ? `<span class="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded"> 已通關 (可看對話)</span>`
+                    : `<span class="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded"> 挑戰中</span>`;
+
+                levelsListEl.innerHTML += `
+                    <div class="bg-white border p-4 rounded-xl shadow-sm flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold text-slate-800">關卡 ${idx + 1}: ${story.title}</h4>
+                            <p class="text-xs text-slate-500 mt-1 line-clamp-1">${story.content}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${badge}
+                            <button onclick="startLevel(${story.storyIndex})" class="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-blue-700">進入挑戰</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function startLevel(storyIndex) {
+            // 找出對應的 story 物件
+            let foundStory = null;
+            for (let cat in categoriesData) {
+                let match = categoriesData[cat].find(s => s.storyIndex === storyIndex);
+                if (match) { foundStory = match; break; }
+            }
+            activeStory = foundStory;
+
+            hideAll();
+            document.getElementById('game-section').classList.remove('hidden');
+            document.getElementById('game-story-desc').innerText = activeStory.content;
+            
+            let chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = `<div class="text-center text-slate-400 py-2">正在載入 AI 詐騙情境對話...</div>`;
+            document.getElementById('success-banner').classList.add('hidden');
+            document.getElementById('input-area').classList.remove('hidden');
+
+            try {
+                let res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'init_level_chat',
+                        userId: currentUser.userId,
+                        storyIndex: activeStory.storyIndex,
+                        storyContent: activeStory.content,
+                        keyReason: activeStory.keyReason
+                    })
+                });
+                let result = await res.json();
+                if (result.status === 'success') {
+                    renderChatHistory(result.chatHistory);
+                    if (result.isCompleted) {
+                        document.getElementById('level-status-tag').innerText = "📖 已通關紀錄回顧模式 (無二次獎勵)";
+                    }
+                }
+            } catch (err) {
+                alert("初始化對話失敗");
+            }
+        }
+
+        async function sendUserMessage() {
+            let inputEl = document.getElementById('user-chat-input');
+            let msg = inputEl.value.trim();
+            if (!msg) return;
+            inputEl.value = "";
+
+            let chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML += `<div class="bg-blue-100 text-blue-900 p-3 rounded-lg ml-auto max-w-[85%] text-right"><b>您：</b>${msg}</div>`;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            let loadingId = "load_" + Date.now();
+            chatContainer.innerHTML += `<div id="${loadingId}" class="bg-purple-100 text-purple-900 p-3 rounded-lg max-w-[85%]">AI 思考並回應中...</div>`;
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // 取得目前的 chat history
+            let currentHistory = getDomChatHistory();
+
+            try {
+                let res = await fetch(GAS_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'chat_with_scam_ai',
+                        userId: currentUser.userId,
+                        storyIndex: activeStory.storyIndex,
+                        userMessage: msg,
+                        storyContent: activeStory.content,
+                        keyReason: activeStory.keyReason,
+                        chatHistory: currentHistory
+                    })
+                });
+                let result = await res.json();
+                document.getElementById(loadingId).remove();
+
+                if (result.status === 'success') {
+                    chatContainer.innerHTML += `<div class="bg-purple-100 text-purple-900 p-3 rounded-lg max-w-[85%]"><b>詐騙嫌疑人 AI：</b>${result.aiReply}</div>`;
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                    if (result.isSuccess) {
+                        // 成功通關
+                        document.getElementById('input-area').classList.add('hidden');
+                        document.getElementById('success-banner').classList.remove('hidden');
+                        if (result.earnedCoins > 0) {
+                            currentUser.coins = result.totalCoins;
+                            document.getElementById('player-coins').innerText = ` ${currentUser.coins}`;
+                            alert(` 恭喜通關！獲得 +100 防詐金幣！`);
+                        } else {
+                            alert(` 成功讓 AI 承認詐騙！(此關卡已通關過，無重複金幣獎勵)`);
+                        }
+                    }
+                }
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                alert("通訊發生錯誤");
+            }
+        }
+
+        async function exitLevel() {
+            if (confirm("確定要退出此關卡嗎？您的對話將會被重置，但通關與金幣狀態會保留，下次回來時會重新生成情境對話！")) {
+                try {
+                    await fetch(GAS_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            action: 'reset_level_chat',
+                            userId: currentUser.userId,
+                            storyIndex: activeStory.storyIndex,
+                            storyContent: activeStory.content,
+                            keyReason: activeStory.keyReason
+                        })
+                    });
+                } catch(e) {}
+                selectCategory(currentCategoryName);
+            }
+        }
+
+        function renderChatHistory(history) {
+            let container = document.getElementById('chat-container');
+            container.innerHTML = "";
+            history.forEach(h => {
+                if (h.role === 'user') {
+                    container.innerHTML += `<div class="bg-blue-100 text-blue-900 p-3 rounded-lg ml-auto max-w-[85%] text-right"><b>您：</b>${h.text}</div>`;
+                } else {
+                    container.innerHTML += `<div class="bg-purple-100 text-purple-900 p-3 rounded-lg max-w-[85%]"><b>詐騙嫌疑人 AI：</b>${h.text}</div>`;
+                }
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function getDomChatHistory() {
+            // 從畫面簡單萃取當前對話給後端
+            let container = document.getElementById('chat-container');
+            let divs = container.children;
+            let history = [];
+            for (let d of divs) {
+                if (d.innerText.startsWith("您：")) {
+                    history.push({role: 'user', text: d.innerText.replace("您：", "").trim()});
+                } else if (d.innerText.startsWith("詐騙嫌疑人 AI：")) {
+                    history.push({role: 'ai', text: d.innerText.replace("詐騙嫌疑人 AI：", "").trim()});
+                }
+            }
+            return history;
+        }
+
+        function goToAIChat() {
+            hideAll();
+            document.getElementById('ai-chat-section').classList.remove('hidden');
+        }
+
+        async function sendConsultMessage() {
+            let input = document.getElementById('consult-input');
+            let msg = input.value.trim();
+            if (!msg) return;
+            input.value = "";
+            let container = document.getElementById('consult-container');
+            container.innerHTML += `<div class="bg-blue-100 text-blue-900 p-3 rounded-lg ml-auto max-w-[85%] text-right"><b>您：</b>${msg}</div>`;
+            
+            try {
+                let res = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify({ action: 'ai_chat', message: msg }) });
+                let result = await res.json();
+                if (result.status === 'success') {
+                    container.innerHTML += `<div class="bg-purple-100 text-purple-900 p-3 rounded-lg max-w-[85%]"><b>顧問：</b>${result.reply}</div>`;
+                }
+            } catch(e) {}
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideAll() {
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('menu-section').classList.add('hidden');
+            document.getElementById('category-section').classList.add('hidden');
+            document.getElementById('levels-section').classList.add('hidden');
+            document.getElementById('game-section').classList.add('hidden');
+            document.getElementById('ai-chat-section').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
